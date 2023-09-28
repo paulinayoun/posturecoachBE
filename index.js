@@ -1,6 +1,6 @@
 const express = require('express');
 const mysql = require('mysql');
-const dbConfig = require('./config/dbConfig.js');
+const dbConfig = require('./models/config/dbConfig.js');
 const connection = mysql.createConnection(dbConfig);
 const app = express();
 const port = 3000;
