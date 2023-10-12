@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/macos,node
-# Edit at https://www.toptal.com/developers/gitignore?templates=macos,node
+# Created by https://www.toptal.com/developers/gitignore/api/node,macos,visualstudiocode
+# Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,visualstudiocode
 
 ### macOS ###
 # General
@@ -143,15 +143,6 @@ dist
 # Docusaurus cache and generated files
 .docusaurus
 
-# etc directories
-etc/
-
-# vscode Local files
-.vscode
-
-# models directories
-models/
-
 # Serverless directories
 .serverless/
 
@@ -183,4 +174,30 @@ models/
 # SvelteKit build / generate output
 .svelte-kit
 
-# End of https://www.toptal.com/developers/gitignore/api/macos,node
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# etc directories
+etc/
+
+# models directories
+models/
+
+# End of https://www.toptal.com/developers/gitignore/api/node,macos,visualstudiocode
+
