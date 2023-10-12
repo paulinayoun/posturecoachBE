@@ -143,6 +143,11 @@ dist
 # Docusaurus cache and generated files
 .docusaurus
 
+# etc directories
+etc/
+
+# vscode Local files
+.vscode
 
 # models directories
 models/

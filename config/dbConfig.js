@@ -1,7 +1,12 @@
+const fs = require('fs');
+
 module.exports = {
-    "host": "127.0.0.1",
-    "port": "3306",
-    "user": "root",
-    "password": "asdf1234",
-    "database": "posturecoachDB"
+  host: 'mysql-pcoach.mysql.database.azure.com',
+  port: 3306,
+  user: 'admin_pcoach',
+  password: 'asdf1234!',
+  database: 'posturecoachDB',
+  ssl: {
+    ca: fs.readFileSync('./etc/DigiCertGlobalRootCA.crt.pem')
   }
+};

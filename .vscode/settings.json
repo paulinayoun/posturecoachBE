@@ -1,0 +1,7 @@
+{
+    "editor.accessibilityPageSize": 10,
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ]
+}
