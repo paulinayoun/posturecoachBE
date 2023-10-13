@@ -3,7 +3,6 @@ const cors = require('cors');
 const mysql = require('mysql');
 const dbConfig = require('./config/dbConfig.js');
 const connection = mysql.createConnection(dbConfig);
-//const connection = mysql.createConnection({host:"mysql-pcoach.mysql.database.azure.com", user:"admin_pcoach", password:"asdf1234!", database:"posturecoachdb", port:3306, ssl:{ca:fs.readFileSync("./etc/DigiCertGlobalRootCA.crt.pem")}});
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -26,6 +25,51 @@ connection.connect((err) => {
 app.get('/api/users', (req, res) => {
   // MySQL에서 사용자 목록을 가져오는 쿼리 실행
   const sql = 'SELECT * FROM user_account';
+  
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/exercise', (req, res) => {
+  // MySQL에서 사용자 목록을 가져오는 쿼리 실행
+  const sql = 'SELECT * FROM exercise_log';
+  
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/machine', (req, res) => {
+  // MySQL에서 사용자 목록을 가져오는 쿼리 실행
+  const sql = 'SELECT * FROM machine_list';
+  
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/physical', (req, res) => {
+  // MySQL에서 사용자 목록을 가져오는 쿼리 실행
+  const sql = 'SELECT * FROM user_physical';
   
   connection.query(sql, (err, results) => {
     if (err) {
