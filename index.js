@@ -38,7 +38,7 @@ app.get('/api/users', (req, res) => {
 });
 
 app.get('/api/exercise', (req, res) => {
-  // MySQL에서 사용자 목록을 가져오는 쿼리 실행
+  // MySQL에서 운동 목록을 가져오는 쿼리 실행
   const sql = 'SELECT * FROM exercise_log';
   
   connection.query(sql, (err, results) => {
@@ -53,7 +53,7 @@ app.get('/api/exercise', (req, res) => {
 });
 
 app.get('/api/machine', (req, res) => {
-  // MySQL에서 사용자 목록을 가져오는 쿼리 실행
+  // MySQL에서 기구 목록을 가져오는 쿼리 실행
   const sql = 'SELECT * FROM machine_list';
   
   connection.query(sql, (err, results) => {
@@ -80,6 +80,62 @@ app.get('/api/physical', (req, res) => {
     
     res.json(results); // MySQL 결과를 JSON 형태로 응답
   });
+});
+
+app.get('/api/ranking/my', (req, res) => {
+  const sql = 'select ranking from (select rank() over (order by sum(exercise_count) desc) as ranking, user_id, sum(exercise_count) from exercise_log where date(exercise_date) = curdate() group by user_id) A where user_id = "ponyo"';
+  
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  })
+});
+
+app.get('/api/ranking/today', (req, res) => {
+  const sql = 'select A.user_name, sum(B.exercise_count) AS exercise_count from user_account A join exercise_log B on A.user_id = B.user_id where date(exercise_date)=curdate() group by B.user_id order by sum(exercise_count) desc';
+  
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  })
+});
+
+app.get('/api/ranking/physical', (req, res) => {
+  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select u2.user_id AS user_id, u2.height AS height, u2.weight AS weight, (u2.weight / (u2.height / 100 * u2.height / 100)) AS BMI from user_physical u1, user_physical u2 where u1.user_id = "ponyo" and u2.user_id != "ponyo" and abs(u1.weight / (u1.height / 100 * u1.height / 100) - u2.weight / (u2.height / 100 * u2.height / 100)) <= 1) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) between date_sub(curdate(), interval 6 day) and curdate()) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  })
+});
+
+app.get('/api/ranking/birth', (req, res) => {
+  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select * from user_physical where datediff((select birth from user_physical where user_id = "ponyo"), birth) between -365 and 365) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) between date_sub(curdate(), interval 6 day) and curdate() and B.user_id != "ponyo") C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  })
 });
 
 app.use(express.json());

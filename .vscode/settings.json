@@ -3,5 +3,7 @@
     "appService.zipIgnorePattern": [
         "node_modules{,/**}",
         ".vscode{,/**}"
-    ]
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/6f78cfcc-d328-4a1d-b2c7-e4f708cc059d/resourceGroups/rg-posturecoach/providers/Microsoft.Web/sites/pcoachapi",
+    "appService.deploySubpath": "."
 }
