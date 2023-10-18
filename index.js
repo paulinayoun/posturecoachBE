@@ -140,6 +140,27 @@ app.get('/api/ranking/birth', (req, res) => {
 
 app.use(express.json());
 
+app.post('/api/login', (req, res) => {
+  const { user_id, user_pw } = req.body;
+
+  const sql = 'select * from user_account where user_id = ? and user_pw = ?';
+  const values = [user_id, user_pw];
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    if (results.length > 0) {
+      res.status(200).json({ success: true, message: 'Login successful' });
+    } else {
+      res.status(401).json({ success: false, message: 'Login failed' });
+    }
+  });
+})
+
 // POST 요청에 대한 라우트 새로운 사용자 추가
 app.post('/api/users', (req, res) => {
   const { user_id, user_pw, user_name } = req.body;
