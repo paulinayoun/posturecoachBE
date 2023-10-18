@@ -140,6 +140,32 @@ app.get('/api/ranking/birth', (req, res) => {
 
 app.use(express.json());
 
+app.get('/api/report/monthly', (req, res) => {
+  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE(B.exercise_date) as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND CURDATE();'
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  })
+});
+
+app.get('/api/report/weekly', (req, res) => {
+  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE(B.exercise_date) as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE();'
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  })
+});
+
 // POST 요청에 대한 라우트 새로운 사용자 추가
 app.post('/api/users', (req, res) => {
   const { user_id, user_pw, user_name } = req.body;
