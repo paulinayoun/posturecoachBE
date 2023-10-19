@@ -140,6 +140,28 @@ app.get('/api/ranking/birth', (req, res) => {
 
 app.use(express.json());
 
+app.post('/api/login', (req, res) => {
+  const { user_id, user_pw } = req.body;
+
+  const sql = 'select * from user_account where user_id = ? and user_pw = ?';
+  const values = [user_id, user_pw];
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    if (results.length > 0) {
+      res.status(200).json({ success: true, message: 'Login successful' });
+    } else {
+      res.status(401).json({ success: false, message: 'Login failed' });
+    }
+  });
+})
+
+
 app.get('/api/report/monthly', (req, res) => {
   const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE(B.exercise_date) as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND CURDATE();'
   connection.query(sql, (err, results) => {
@@ -154,7 +176,7 @@ app.get('/api/report/monthly', (req, res) => {
 });
 
 app.get('/api/report/weekly', (req, res) => {
-  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE(B.exercise_date) as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE();'
+  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE();;'
   connection.query(sql, (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
