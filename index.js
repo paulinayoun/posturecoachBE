@@ -233,18 +233,28 @@ app.get('/api/report/monthly', (req, res) => {
 
 // POST 요청에 대한 라우트 새로운 사용자 추가
 app.post('/api/users', (req, res) => {
-  const { user_id, user_pw, user_name } = req.body;
+  const { user_id, user_pw, user_name, height, weight, gender, birth } = req.body;
   
   // MySQL에 사용자 추가하는 쿼리 실행
-  const sql = 'INSERT INTO user_account (user_id, user_pw, user_name) VALUES (?, ?, ?)';
-  const values = [user_id, user_pw, user_name];
+  const sql_account = 'INSERT INTO user_account (user_id, user_pw, user_name) VALUES (?, ?, ?)';
+  const values_account = [user_id, user_pw, user_name];
+
+  const sql_physical = 'insert into user_physical (user_id, height, weight, gender, birth) values (?, ?, ?, ?, ?)';
+  const values_physical = [user_id, height, weight, gender, birth];
   
-  connection.query(sql, values, (err) => {
+  connection.query(sql_account, values_account, err => {
     if (err) {
-      console.error('MySQL query error:', err);
+      console.error('MySQL user_account query error:', err);
       res.status(500).json({ error: 'Internal Server Error' });
       return;
     }
+
+    connection.query(sql_physical, values_physical, err => {
+      if (err) {
+        console.error('MySQL user_physical query error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }});
+      return;
     
     res.status(201).send('User added successfully');
   });
