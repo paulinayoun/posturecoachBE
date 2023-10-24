@@ -161,6 +161,49 @@ app.post('/api/login', (req, res) => {
   });
 })
 
+app.get('/api/report/weekly', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() ORDER BY DATE(B.exercise_date) ASC;'
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+
+app.get('/api/report/weekly/sum', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'select B.user_id, A.machine_name, sum(B.exercise_count) as exercise_count from machine_list A join exercise_log B on A.machine_code = B.machine_code where B.user_id = "ponyo" and date(B.exercise_date) between date_sub(curdate(), interval 6 day) and curdate() group by B.machine_code;'
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
 
 app.get('/api/report/monthly', (req, res) => {
   const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE(B.exercise_date) as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND CURDATE();'
@@ -175,18 +218,18 @@ app.get('/api/report/monthly', (req, res) => {
   })
 });
 
-app.get('/api/report/weekly', (req, res) => {
-  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE();;'
-  connection.query(sql, (err, results) => {
-    if (err) {
-      console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
+// app.get('/api/report/weekly', (req, res) => {
+//   const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() ORDER BY DATE(B.exercise_date) ASC;'
+//   connection.query(sql, (err, results) => {
+//     if (err) {
+//       console.error('MySQL query error:', err);
+//       res.status(500).json({ error: 'Internal Server Error' });
+//       return;
+//     }
     
-    res.json(results); // MySQL 결과를 JSON 형태로 응답
-  })
-});
+//     res.json(results); // MySQL 결과를 JSON 형태로 응답
+//   })
+// });
 
 // POST 요청에 대한 라우트 새로운 사용자 추가
 app.post('/api/users', (req, res) => {
