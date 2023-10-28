@@ -182,8 +182,7 @@ app.get('/api/report/weekly', (req, res) => {
   });
 });
 
-
-app.get('/api/report/weekly/sum', (req, res) => {
+app.get('/api/report/weekly/totalCounts', (req, res) => {
   const loggedInUserId = req.query.loggedInUserId;
 
   if (!loggedInUserId) {
@@ -191,7 +190,92 @@ app.get('/api/report/weekly/sum', (req, res) => {
     return;
   }
 
-  const sql = 'select B.user_id, A.machine_name, sum(B.exercise_count) as exercise_count from machine_list A join exercise_log B on A.machine_code = B.machine_code where B.user_id = "ponyo" and date(B.exercise_date) between date_sub(curdate(), interval 6 day) and curdate() group by B.machine_code;'
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() GROUP BY B.user_id;'
+
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/report/weekly/chestpress', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND A.machine_code = 1 AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() GROUP BY B.user_id;'
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/report/weekly/latpulldown', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND A.machine_code = 2 AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() GROUP BY B.user_id;'
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/report/weekly/legpress', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND A.machine_code = 3 AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() GROUP BY B.user_id;'
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/report/weekly/legextension', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ?" AND A.machine_code = 4 AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() GROUP BY B.user_id;'
 
   connection.query(sql, [loggedInUserId], (err, results) => {
     if (err) {
@@ -205,8 +289,13 @@ app.get('/api/report/weekly/sum', (req, res) => {
 });
 
 
+
+
+
 app.get('/api/report/monthly', (req, res) => {
-  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE(B.exercise_date) as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND CURDATE();'
+
+  const sql = 'SELECT B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date, SUM(B.exercise_count) as total_exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND  DATE_FORMAT(B.exercise_date, "%Y-%m") = DATE_FORMAT(NOW() - INTERVAL 0  MONTH, "%Y-%m") GROUP BY B.user_id, exercise_date ORDER BY exercise_date ASC;'
+
   connection.query(sql, (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
@@ -216,6 +305,49 @@ app.get('/api/report/monthly', (req, res) => {
     
     res.json(results); // MySQL 결과를 JSON 형태로 응답
   })
+});
+
+app.get('/api/report/monthly/totalCounts', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "youne" AND YEAR(B.exercise_date) = YEAR(CURDATE()) AND MONTH(B.exercise_date) = MONTH(CURDATE())GROUP BY B.user_id;'
+
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.get('/api/report/monthly/type', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
+
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+
+  const sql = 'SELECT A.machine_name, SUM(B.exercise_count) as exercise_count FROM machine_list A LEFT JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND YEAR(B.exercise_date) = YEAR(CURDATE()) AND MONTH(B.exercise_date) = MONTH(CURDATE()) GROUP BY A.machine_name;'
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
 });
 
 // app.get('/api/report/weekly', (req, res) => {
