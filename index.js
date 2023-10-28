@@ -21,57 +21,12 @@ connection.connect((err) => {
   }
 });
 
-// GET 요청에 대한 라우트 예시: 사용자 목록 가져오기
-app.get('/api/users', (req, res) => {
+app.get('/api/contents', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
   // MySQL에서 사용자 목록을 가져오는 쿼리 실행
-  const sql = 'SELECT * FROM user_account';
+  const sql = 'select B.machine_name as machineName from exercise_log A join machine_list B on A.machine_code = B.machine_code where A.user_id = ? order by A.exercise_date desc limit 1';
   
-  connection.query(sql, (err, results) => {
-    if (err) {
-      console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-    
-    res.json(results); // MySQL 결과를 JSON 형태로 응답
-  });
-});
-
-app.get('/api/exercise', (req, res) => {
-  // MySQL에서 운동 목록을 가져오는 쿼리 실행
-  const sql = 'SELECT * FROM exercise_log';
-  
-  connection.query(sql, (err, results) => {
-    if (err) {
-      console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-    
-    res.json(results); // MySQL 결과를 JSON 형태로 응답
-  });
-});
-
-app.get('/api/machine', (req, res) => {
-  // MySQL에서 기구 목록을 가져오는 쿼리 실행
-  const sql = 'SELECT * FROM machine_list';
-  
-  connection.query(sql, (err, results) => {
-    if (err) {
-      console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-    
-    res.json(results); // MySQL 결과를 JSON 형태로 응답
-  });
-});
-
-app.get('/api/physical', (req, res) => {
-  // MySQL에서 사용자 목록을 가져오는 쿼리 실행
-  const sql = 'SELECT * FROM user_physical';
-  
-  connection.query(sql, (err, results) => {
+  connection.query(sql, [loggedInUserId], (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -83,9 +38,10 @@ app.get('/api/physical', (req, res) => {
 });
 
 app.get('/api/ranking/my', (req, res) => {
-  const sql = 'select ranking from (select rank() over (order by sum(exercise_count) desc) as ranking, user_id, sum(exercise_count) from exercise_log where date(exercise_date) = curdate() group by user_id) A where user_id = "ponyo"';
+  const loggedInUserId = req.query.loggedInUserId;
+  const sql = 'select ranking from (select rank() over (order by sum(exercise_count) desc) as ranking, user_id, sum(exercise_count) from exercise_log where date(exercise_date) = curdate() group by user_id) A where user_id = ?';
   
-  connection.query(sql, (err, results) => {
+  connection.query(sql, [loggedInUserId], (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -111,12 +67,13 @@ app.get('/api/ranking/today', (req, res) => {
 });
 
 app.get('/api/ranking/physical', (req, res) => {
-  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select u2.user_id AS user_id, u2.height AS height, u2.weight AS weight, (u2.weight / (u2.height / 100 * u2.height / 100)) AS BMI from user_physical u1, user_physical u2 where u1.user_id = "ponyo" and u2.user_id != "ponyo" and abs(u1.weight / (u1.height / 100 * u1.height / 100) - u2.weight / (u2.height / 100 * u2.height / 100)) <= 1) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) between date_sub(curdate(), interval 6 day) and curdate()) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  const loggedInUserId = req.query.loggedInUserId;
+  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select u2.user_id AS user_id, u2.height AS height, u2.weight AS weight, (u2.weight / (u2.height / 100 * u2.height / 100)) AS BMI from user_physical u1, user_physical u2 where u1.user_id = ? and u2.user_id != ? and abs(u1.weight / (u1.height / 100 * u1.height / 100) - u2.weight / (u2.height / 100 * u2.height / 100)) <= 1) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate()) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
   
-  connection.query(sql, (err, results) => {
+  connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error', details: err.message });
       return;
     }
     
@@ -125,12 +82,13 @@ app.get('/api/ranking/physical', (req, res) => {
 });
 
 app.get('/api/ranking/birth', (req, res) => {
-  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select * from user_physical where datediff((select birth from user_physical where user_id = "ponyo"), birth) between -365 and 365) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) between date_sub(curdate(), interval 6 day) and curdate() and B.user_id != "ponyo") C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  const loggedInUserId = req.query.loggedInUserId;
+  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select * from user_physical where datediff((select birth from user_physical where user_id = ?), birth) between -365 and 365) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate() and B.user_id != ?) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
   
-  connection.query(sql, (err, results) => {
+  connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error', details: err.message });
       return;
     }
     
@@ -288,10 +246,6 @@ app.get('/api/report/weekly/legextension', (req, res) => {
   });
 });
 
-
-
-
-
 app.get('/api/report/monthly', (req, res) => {
 
   const sql = 'SELECT B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date, SUM(B.exercise_count) as total_exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND  DATE_FORMAT(B.exercise_date, "%Y-%m") = DATE_FORMAT(NOW() - INTERVAL 0  MONTH, "%Y-%m") GROUP BY B.user_id, exercise_date ORDER BY exercise_date ASC;'
@@ -349,6 +303,8 @@ app.get('/api/report/monthly/type', (req, res) => {
     res.json(results); // MySQL 결과를 JSON 형태로 응답
   });
 });
+
+
 
 // app.get('/api/report/weekly', (req, res) => {
 //   const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() ORDER BY DATE(B.exercise_date) ASC;'
