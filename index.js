@@ -127,9 +127,9 @@ app.get('/api/report/weekly', (req, res) => {
     return;
   }
 
-  const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() ORDER BY DATE(B.exercise_date) ASC;'
+  const sql = 'SELECT IFNULL(el.user_id, ?) AS user_id, IFNULL(ml.machine_name, "none") AS machine_name, IFNULL(el.exercise_count, 0) AS exercise_count, tempDate.exercise_date AS exercise_date FROM (SELECT CURDATE() - INTERVAL (a.a + (10 * b.a)) DAY AS exercise_date FROM (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS a CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS b) AS tempDate LEFT JOIN exercise_log el ON tempDate.exercise_date = DATE(el.exercise_date) AND el.user_id = ? LEFT JOIN machine_list ml ON el.machine_code = ml.machine_code WHERE tempDate.exercise_date > CURDATE() - INTERVAL 7 DAY ORDER BY exercise_date;'
 
-  connection.query(sql, [loggedInUserId], (err, results) => {
+  connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -233,7 +233,7 @@ app.get('/api/report/weekly/legextension', (req, res) => {
     return;
   }
 
-  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ?" AND A.machine_code = 4 AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() GROUP BY B.user_id;'
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND A.machine_code = 4 AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() GROUP BY B.user_id;'
 
   connection.query(sql, [loggedInUserId], (err, results) => {
     if (err) {
@@ -269,7 +269,7 @@ app.get('/api/report/monthly/totalCounts', (req, res) => {
     return;
   }
 
-  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "youne" AND YEAR(B.exercise_date) = YEAR(CURDATE()) AND MONTH(B.exercise_date) = MONTH(CURDATE())GROUP BY B.user_id;'
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND YEAR(B.exercise_date) = YEAR(CURDATE()) AND MONTH(B.exercise_date) = MONTH(CURDATE())GROUP BY B.user_id;'
 
 
   connection.query(sql, [loggedInUserId], (err, results) => {
