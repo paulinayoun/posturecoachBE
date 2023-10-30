@@ -304,20 +304,46 @@ app.get('/api/report/monthly/type', (req, res) => {
   });
 });
 
+app.get('/api/userInfo', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
 
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
 
-// app.get('/api/report/weekly', (req, res) => {
-//   const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() ORDER BY DATE(B.exercise_date) ASC;'
-//   connection.query(sql, (err, results) => {
-//     if (err) {
-//       console.error('MySQL query error:', err);
-//       res.status(500).json({ error: 'Internal Server Error' });
-//       return;
-//     }
-    
-//     res.json(results); // MySQL 결과를 JSON 형태로 응답
-//   })
-// });
+  const sql = 'SELECT U.user_id, U.user_pw, U.user_name, P.height, P.weight, P.gender, DATE_FORMAT(P.birth, "%Y-%m-%d") as birth FROM user_account U INNER JOIN user_physical P ON U.user_id = P.user_id WHERE U.user_id = ?;'
+
+  connection.query(sql, [loggedInUserId], (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
+
+app.post('/api/editInfo', (req, res) => {
+
+  // 요청 본문에서 JSON 데이터를 파싱합니다.
+  const { user_id, user_pw, user_name } = req.body;
+
+  const sql = 'UPDATE user_account SET user_pw = ?, user_name = ? WHERE user_id = ?';
+
+  const params = [user_pw, user_name, user_id];
+
+  connection.query(sql, params, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error', details: err.message });
+      return;
+    }
+
+    res.json(results); // MySQL 결과를 JSON 형태로 응답
+  });
+});
 
 // POST 요청에 대한 라우트 새로운 사용자 추가
 app.post('/api/users', (req, res) => {
