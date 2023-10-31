@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-
+app.use(express.json());
 
 
 // MySQL 연결
@@ -68,7 +68,7 @@ app.get('/api/ranking/today', (req, res) => {
 
 app.get('/api/ranking/physical', (req, res) => {
   const loggedInUserId = req.query.loggedInUserId;
-  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select u2.user_id AS user_id, u2.height AS height, u2.weight AS weight, (u2.weight / (u2.height / 100 * u2.height / 100)) AS BMI from user_physical u1, user_physical u2 where u1.user_id = ? and u2.user_id != ? and abs(u1.weight / (u1.height / 100 * u1.height / 100) - u2.weight / (u2.height / 100 * u2.height / 100)) <= 1) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate()) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  const sql = 'select D.machine_name, floor(avg(C.exercise_count)) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select u2.user_id AS user_id, u2.height AS height, u2.weight AS weight, (u2.weight / (u2.height / 100 * u2.height / 100)) AS BMI from user_physical u1, user_physical u2 where u1.user_id = ? and u2.user_id != ? and abs(u1.weight / (u1.height / 100 * u1.height / 100) - u2.weight / (u2.height / 100 * u2.height / 100)) <= 1) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate()) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
   
   connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
@@ -83,7 +83,7 @@ app.get('/api/ranking/physical', (req, res) => {
 
 app.get('/api/ranking/birth', (req, res) => {
   const loggedInUserId = req.query.loggedInUserId;
-  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select * from user_physical where datediff((select birth from user_physical where user_id = ?), birth) between -365 and 365) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate() and B.user_id != ?) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  const sql = 'select D.machine_name, floor(avg(C.exercise_count)) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select * from user_physical where datediff((select birth from user_physical where user_id = ?), birth) between -365 and 365) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate() and B.user_id != ?) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
   
   connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
@@ -96,28 +96,8 @@ app.get('/api/ranking/birth', (req, res) => {
   })
 });
 
-app.use(express.json());
 
-app.post('/api/login', (req, res) => {
-  const { user_id, user_pw } = req.body;
 
-  const sql = 'select * from user_account where user_id = ? and user_pw = ?';
-  const values = [user_id, user_pw];
-
-  connection.query(sql, values, (err, results) => {
-    if (err) {
-      console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-
-    if (results.length > 0) {
-      res.status(200).json({ success: true, message: 'Login successful' });
-    } else {
-      res.status(401).json({ success: false, message: 'Login failed' });
-    }
-  });
-})
 
 app.get('/api/report/weekly', (req, res) => {
   const loggedInUserId = req.query.loggedInUserId;
@@ -304,20 +284,26 @@ app.get('/api/report/monthly/type', (req, res) => {
   });
 });
 
+app.post('/api/login', (req, res) => {
+  const { user_id, user_pw } = req.body;
 
+  const sql = 'select * from user_account where user_id = ? and user_pw = ?';
+  const values = [user_id, user_pw];
 
-// app.get('/api/report/weekly', (req, res) => {
-//   const sql = 'SELECT B.user_id, A.machine_name, B.exercise_count, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = "ponyo" AND DATE(B.exercise_date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE() ORDER BY DATE(B.exercise_date) ASC;'
-//   connection.query(sql, (err, results) => {
-//     if (err) {
-//       console.error('MySQL query error:', err);
-//       res.status(500).json({ error: 'Internal Server Error' });
-//       return;
-//     }
-    
-//     res.json(results); // MySQL 결과를 JSON 형태로 응답
-//   })
-// });
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    if (results.length > 0) {
+      res.status(200).json({ success: true, message: 'Login successful' });
+    } else {
+      res.status(401).json({ success: false, message: 'Login failed' });
+    }
+  });
+})
 
 // POST 요청에 대한 라우트 새로운 사용자 추가
 app.post('/api/users', (req, res) => {
@@ -373,27 +359,3 @@ app.post('/api/exercise', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
-
-// configuration =========================
-
-
-// app.get('/', (req, res) => {
-//   res.send('Root');
-// });
-
-// app.get('/users', (req, res) => {
-//   connection.query('SELECT * from User', (error, rows) => {
-//     if (error) throw error;
-//     console.log('User info is: ', rows);
-//     res.send(rows);
-//   });
-// });
-
-// app.get('/exercise', (req, res) => {
-//   connection.query('SELECT * from Exercise_log', (error, rows) => {
-//     if (error) throw error;
-//     console.log('User info is: ', rows);
-//     res.send(rows);
-//   });
-// });
