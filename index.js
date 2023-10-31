@@ -225,7 +225,7 @@ app.get('/api/report/weekly/legextension', (req, res) => {
 
 app.get('/api/report/monthly', (req, res) => {
 
-  const sql = 'SELECT B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") as exercise_date, SUM(B.exercise_count) as total_exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND  DATE_FORMAT(B.exercise_date, "%Y-%m") = DATE_FORMAT(NOW() - INTERVAL 0  MONTH, "%Y-%m") GROUP BY B.user_id, exercise_date ORDER BY exercise_date ASC;'
+  const sql = 'SELECT B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") AS exercise_date, SUM(B.exercise_count) AS total_exercise_count FROM  machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND DATE_FORMAT(B.exercise_date, "%Y-%m") = DATE_FORMAT(NOW() - INTERVAL 0 MONTH, "%Y-%m") GROUP BY B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") ORDER BY  exercise_date ASC;'
 
   connection.query(sql, (err, results) => {
     if (err) {
