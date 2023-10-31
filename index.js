@@ -314,7 +314,11 @@ app.post('/api/login', (req, res) => {
       return;
     }
 
-    res.json(results); // MySQL 결과를 JSON 형태로 응답
+    if (results.length > 0) {
+      res.status(200).json({ success: true, message: 'Login successful' });
+    } else {
+      res.status(401).json({ success: false, message: 'Login failed' });
+    }
   });
 });
 
@@ -352,18 +356,18 @@ app.post('/api/users', (req, res) => {
   connection.query(sql_account, values_account, err => {
     if (err) {
       console.error('MySQL user_account query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error', details: err.message });
       return;
     }
 
     connection.query(sql_physical, values_physical, err => {
       if (err) {
         console.error('MySQL user_physical query error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        return;
       }});
-      return;
     
-    res.status(201).send('User added successfully');
+      res.status(201).send('User added successfully');
   });
 });
 
