@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-
+app.use(express.json());
 
 
 // MySQL 연결
@@ -68,7 +68,7 @@ app.get('/api/ranking/today', (req, res) => {
 
 app.get('/api/ranking/physical', (req, res) => {
   const loggedInUserId = req.query.loggedInUserId;
-  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select u2.user_id AS user_id, u2.height AS height, u2.weight AS weight, (u2.weight / (u2.height / 100 * u2.height / 100)) AS BMI from user_physical u1, user_physical u2 where u1.user_id = ? and u2.user_id != ? and abs(u1.weight / (u1.height / 100 * u1.height / 100) - u2.weight / (u2.height / 100 * u2.height / 100)) <= 1) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate()) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  const sql = 'select D.machine_name, floor(avg(C.exercise_count)) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select u2.user_id AS user_id, u2.height AS height, u2.weight AS weight, (u2.weight / (u2.height / 100 * u2.height / 100)) AS BMI from user_physical u1, user_physical u2 where u1.user_id = ? and u2.user_id != ? and abs(u1.weight / (u1.height / 100 * u1.height / 100) - u2.weight / (u2.height / 100 * u2.height / 100)) <= 1) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate()) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
   
   connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
@@ -83,7 +83,7 @@ app.get('/api/ranking/physical', (req, res) => {
 
 app.get('/api/ranking/birth', (req, res) => {
   const loggedInUserId = req.query.loggedInUserId;
-  const sql = 'select D.machine_name, avg(C.exercise_count) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select * from user_physical where datediff((select birth from user_physical where user_id = ?), birth) between -365 and 365) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate() and B.user_id != ?) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
+  const sql = 'select D.machine_name, floor(avg(C.exercise_count)) as exercise_count from (select A.user_id, B.machine_code, B.exercise_count, B.exercise_date from (select * from user_physical where datediff((select birth from user_physical where user_id = ?), birth) between -365 and 365) A join exercise_log B on A.user_id = B.user_id where date(B.exercise_date) = curdate() and B.user_id != ?) C join machine_list D on C.machine_code = D.machine_code group by C.machine_code order by exercise_count desc';
   
   connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
@@ -96,29 +96,6 @@ app.get('/api/ranking/birth', (req, res) => {
   })
 });
 
-app.use(express.json());
-
-app.post('/api/login', (req, res) => {
-  const { user_id, user_pw } = req.body;
-
-  const sql = 'select * from user_account where user_id = ? and user_pw = ?';
-  const values = [user_id, user_pw];
-
-  connection.query(sql, values, (err, results) => {
-    if (err) {
-      console.error('MySQL query error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-
-    if (results.length > 0) {
-      res.status(200).json({ success: true, message: 'Login successful' });
-    } else {
-      res.status(401).json({ success: false, message: 'Login failed' });
-    }
-  });
-})
-
 app.get('/api/report/weekly', (req, res) => {
   const loggedInUserId = req.query.loggedInUserId;
 
@@ -127,7 +104,7 @@ app.get('/api/report/weekly', (req, res) => {
     return;
   }
 
-  const sql = 'SELECT IFNULL(el.user_id, ?) AS user_id, IFNULL(ml.machine_name, "none") AS machine_name, IFNULL(el.exercise_count, 0) AS exercise_count, tempDate.exercise_date AS exercise_date FROM (SELECT CURDATE() - INTERVAL (a.a + (10 * b.a)) DAY AS exercise_date FROM (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS a CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS b) AS tempDate LEFT JOIN exercise_log el ON tempDate.exercise_date = DATE(el.exercise_date) AND el.user_id = ? LEFT JOIN machine_list ml ON el.machine_code = ml.machine_code WHERE tempDate.exercise_date > CURDATE() - INTERVAL 7 DAY ORDER BY exercise_date;'
+  const sql = 'SELECT IFNULL(el.user_id, ?) AS user_id, IFNULL(ml.machine_name, "none") AS machine_name, IFNULL(el.exercise_count, 0) AS exercise_count, DATE_FORMAT(tempDate.exercise_date, "%m-%d") AS exercise_date FROM (SELECT CURDATE() - INTERVAL (a.a + (10 * b.a)) DAY AS exercise_date FROM (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS a CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS b ) AS tempDate LEFT JOIN exercise_log el ON tempDate.exercise_date = DATE(el.exercise_date) AND el.user_id = ? LEFT JOIN machine_list ml ON el.machine_code = ml.machine_code WHERE tempDate.exercise_date > CURDATE() - INTERVAL 7 DAY ORDER BY exercise_date;'
 
   connection.query(sql, [loggedInUserId, loggedInUserId], (err, results) => {
     if (err) {
@@ -315,6 +292,22 @@ app.get('/api/userInfo', (req, res) => {
   const sql = 'SELECT U.user_id, U.user_pw, U.user_name, P.height, P.weight, P.gender, DATE_FORMAT(P.birth, "%Y-%m-%d") as birth FROM user_account U INNER JOIN user_physical P ON U.user_id = P.user_id WHERE U.user_id = ?;'
 
   connection.query(sql, [loggedInUserId], (err, results) => {
+
+    if (results.length > 0) {
+      res.status(200).json({ success: true, message: 'Login successful' });
+    } else {
+      res.status(401).json({ success: false, message: 'Login failed' });
+    }
+  });
+})
+
+app.post('/api/login', (req, res) => {
+  const { user_id, user_pw } = req.body;
+
+  const sql = 'select * from user_account where user_id = ? and user_pw = ?';
+  const values = [user_id, user_pw];
+
+  connection.query(sql, values, (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -399,27 +392,3 @@ app.post('/api/exercise', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
-
-// configuration =========================
-
-
-// app.get('/', (req, res) => {
-//   res.send('Root');
-// });
-
-// app.get('/users', (req, res) => {
-//   connection.query('SELECT * from User', (error, rows) => {
-//     if (error) throw error;
-//     console.log('User info is: ', rows);
-//     res.send(rows);
-//   });
-// });
-
-// app.get('/exercise', (req, res) => {
-//   connection.query('SELECT * from Exercise_log', (error, rows) => {
-//     if (error) throw error;
-//     console.log('User info is: ', rows);
-//     res.send(rows);
-//   });
-// });
