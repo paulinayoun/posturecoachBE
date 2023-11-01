@@ -224,18 +224,23 @@ app.get('/api/report/weekly/legextension', (req, res) => {
 });
 
 app.get('/api/report/monthly', (req, res) => {
+  const loggedInUserId = req.query.loggedInUserId;
 
-  const sql = 'SELECT B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") AS exercise_date, SUM(B.exercise_count) AS total_exercise_count FROM  machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND DATE_FORMAT(B.exercise_date, "%Y-%m") = DATE_FORMAT(NOW() - INTERVAL 0 MONTH, "%Y-%m") GROUP BY B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") ORDER BY  exercise_date ASC;'
+  if (!loggedInUserId) {
+    res.status(400).json({ error: 'User ID not provided' });
+    return;
+  }
+  const sql = 'SELECT B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") AS exercise_date, SUM(B.exercise_count) AS total_exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND DATE_FORMAT(B.exercise_date, "%Y-%m") = "2023-10" GROUP BY B.user_id, DATE_FORMAT(B.exercise_date, "%Y-%m-%d") ORDER BY exercise_date ASC;'
 
-  connection.query(sql, (err, results) => {
+  connection.query(sql, [loggedInUserId], (err, results) => {
     if (err) {
       console.error('MySQL query error:', err);
       res.status(500).json({ error: 'Internal Server Error' });
       return;
     }
-    
+
     res.json(results); // MySQL 결과를 JSON 형태로 응답
-  })
+  });
 });
 
 app.get('/api/report/monthly/totalCounts', (req, res) => {
@@ -246,7 +251,7 @@ app.get('/api/report/monthly/totalCounts', (req, res) => {
     return;
   }
 
-  const sql = 'SELECT B.user_id, SUM(B.exercise_count) as exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND YEAR(B.exercise_date) = YEAR(CURDATE()) AND MONTH(B.exercise_date) = MONTH(CURDATE())GROUP BY B.user_id;'
+  const sql = 'SELECT B.user_id, SUM(B.exercise_count) AS exercise_count FROM machine_list A JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND YEAR(B.exercise_date) = 2023 AND MONTH(B.exercise_date) = 10 GROUP BY B.user_id;'
 
 
   connection.query(sql, [loggedInUserId], (err, results) => {
@@ -268,7 +273,7 @@ app.get('/api/report/monthly/type', (req, res) => {
     return;
   }
 
-  const sql = 'SELECT A.machine_name, SUM(B.exercise_count) as exercise_count FROM machine_list A LEFT JOIN exercise_log B ON A.machine_code = B.machine_code WHERE B.user_id = ? AND YEAR(B.exercise_date) = YEAR(CURDATE()) AND MONTH(B.exercise_date) = MONTH(CURDATE()) GROUP BY A.machine_name;'
+  const sql = 'SELECT A.machine_name, IFNULL(SUM(B.exercise_count), 0) AS exercise_count FROM machine_list A LEFT JOIN exercise_log B ON A.machine_code = B.machine_code AND B.user_id = ? WHERE YEAR(B.exercise_date) = 2023 AND MONTH(B.exercise_date) = 10 GROUP BY A.machine_name;'
 
   connection.query(sql, [loggedInUserId], (err, results) => {
     if (err) {
@@ -293,11 +298,13 @@ app.get('/api/userInfo', (req, res) => {
 
   connection.query(sql, [loggedInUserId], (err, results) => {
 
-    if (results.length > 0) {
-      res.status(200).json({ success: true, message: 'Login successful' });
-    } else {
-      res.status(401).json({ success: false, message: 'Login failed' });
+    if (err) {
+      console.error('MySQL query error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
     }
+    
+    res.json(results);
   });
 })
 
