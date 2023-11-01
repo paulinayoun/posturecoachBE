@@ -322,7 +322,8 @@ app.post('/api/login', (req, res) => {
     }
 
     if (results.length > 0) {
-      res.status(200).json({ success: true, message: 'Login successful' });
+      const user_name = results[0].user_name;
+      res.status(200).json({ success: true, message: 'Login successful', user_name });
     } else {
       res.status(401).json({ success: false, message: 'Login failed' });
     }
